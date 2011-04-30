@@ -10,3 +10,8 @@ Rationale:
 The wurfl module created by wurfl2python.py is not small.  It takes time to
 import and occupies memory.  Wrapping it in a web service allows multiple
 applications to use it.
+
+The main wurfl.xml file needs to be patched using the web_browsers_patch.xml
+file prior to generating the wurfl.py file.  This is done in the patching
+directory by executing the rebuild.sh script, which is modelled after the
+script by the same name that is part of the Django Mobile Extension project.

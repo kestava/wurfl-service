@@ -1,29 +1,31 @@
 
-import argparse
-import json
-
 import cherrypy
-
-from wurfl import devices
-from pywurfl.algorithms import TwoStepAnalysis
 
 class AppController(object):
 
     @cherrypy.expose
     def getUserAgentInfo(self, userAgentString):
+    
+        def tokenizer(devwindow=30):
+            def _analyze(ua_str):
+                return devices.select_ua(ua_str, search=Tokenizer(devwindow))
+            return _analyze
+            
+        def two_step_analysis():
+            def _analyze(ua_str):
+                return devices.select_ua(ua_str, search=TwoStepAnalysis(devices))
+            return _analyze
+            
+        cherrypy.log.error('\n\nUser Agent string: {0}'.format(userAgentString))
         cherrypy.response.headers['content-type'] = 'application/json'
-        algo = TwoStepAnalysis(devices)
-        device = devices.select_ua(userAgentString, search=algo)
-        #s = json.dumps(device)
-        #print(s)
-        #o = [i for i in device]
-        #print(o)
-        #s = json.dumps(o)
-        #print(s)
-        #return s
-        #return 'blah'
+        func = two_step_analysis()
+        device = func(userAgentString)
+        cherrypy.log.error('Device UA: {0}\nDevice Id: {1}'.format(device.devua, device.devid))
         
-        o = {}
+        o = {
+            'device_ua': device.devua,
+            'device_id': device.devid
+        }
         
         for i in device:
             group = i[0]
@@ -35,6 +37,8 @@ class AppController(object):
                 
             o[group][property] = value
         
+        print('Detected User Agent: {0}\nDetected Device Id: {1}'.format(device.devua, device.devid))
+        #pprint(o)
         return json.dumps(o)
         
 
@@ -44,6 +48,13 @@ def main(config_file_path):
         config=config_file_path)
 
 if __name__ == '__main__':
+    import argparse
+    import json
+    from pprint import pprint
+    
+    from wurfl import devices
+    from pywurfl.algorithms import TwoStepAnalysis, Tokenizer
+    
     parser = argparse.ArgumentParser(description='A web service to deliver user agent information based on its user agent string')
     parser.add_argument('-c', '--config',
         dest='config_file', help='The full path to the configuration file.',
